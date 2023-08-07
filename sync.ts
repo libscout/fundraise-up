@@ -6,21 +6,29 @@ import { CustomerSyncService } from "./src/customer.sync.service";
 
 config();
 const { DB_URI } = process.env;
+const FULL_SYNC = process.argv.includes("--full-reindex");
 
 const client = new MongoClient(DB_URI);
 
-const dbName = "myProject";
+const dbName = "test";
 
 async function main() {
   await client.connect();
   console.log("Connected successfully to server");
   const db = client.db(dbName);
 
-  const source = db.collection<Customer>("Customer");
+  const source = db.collection<Customer>("customers");
   const target = db.collection<Customer>("customers_anonymised");
-  const service = new CustomerSyncService(source, target);
+  const tokenCollection = db.collection<any>("sync-token");
+  const service = new CustomerSyncService(tokenCollection, source, target);
 
-  await service.fullSync();
+  process.on("exit", async () => {
+    console.log("destroy CustomerSyncService");
+    await service.destroy();
+    await client.close();
+  });
+
+  FULL_SYNC ? await service.fullSync() : await service.watch();
   console.log("DONE");
 }
 

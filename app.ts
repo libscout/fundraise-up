@@ -8,14 +8,18 @@ config();
 const { DB_URI } = process.env;
 const client = new MongoClient(DB_URI);
 
-const dbName = "myProject";
+const dbName = "test";
 
 async function main() {
   await client.connect();
+  process.on("exit", async () => {
+    await client.close();
+  });
+
   console.log("Connected successfully to server");
   const db = client.db(dbName);
 
-  const collection = db.collection<Customer>("Customer");
+  const collection = db.collection<Customer>("customers");
   const service = new CustomerGeneratorService(collection);
 
   setInterval(() => {
@@ -24,7 +28,4 @@ async function main() {
   }, 200);
 }
 
-main()
-  .then(console.log)
-  .catch(console.error)
-  .finally(() => client.close());
+main().then(console.log).catch(console.error);

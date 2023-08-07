@@ -1,13 +1,14 @@
-import { Collection, Db, EnhancedOmit } from "mongodb";
+import { Collection, Db, EnhancedOmit, InferIdType, ObjectId } from "mongodb";
 import { Address, Customer } from "./dto";
 import { faker } from "@faker-js/faker";
 
 export class CustomerGeneratorService {
   constructor(private readonly collection: Collection<Customer>) {}
 
-  async generateAndSaveRandomCustomers(quantity: number): Promise<void> {
+  async generateAndSaveRandomCustomers(quantity: number): Promise<ObjectId[]> {
     const customers = this.randomNewCustomers(quantity);
-    await this.collection.insertMany(customers);
+    const res = await this.collection.insertMany(customers);
+    return Object.values(res.insertedIds);
   }
 
   private randomNewCustomers(length: number): Customer[] {
