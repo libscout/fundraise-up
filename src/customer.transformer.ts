@@ -1,7 +1,6 @@
 import { Transform, TransformCallback } from "stream";
 import { Customer } from "./dto";
-import { InferIdType, ObjectId } from "mongodb";
-import { faker } from "@faker-js/faker";
+import { InferIdType } from "mongodb";
 import { createHmac } from "node:crypto";
 
 const RANDOM_STRING_LENGTH = 8;
@@ -33,18 +32,21 @@ function anonymizeCustomer(chunk: Customer & InferIdType<Document>): Customer {
 }
 
 function encrypt(str: string): string {
-  if (typeof str !== "string")
-    return faker.datatype.string(RANDOM_STRING_LENGTH);
+  if (!str || typeof str !== "string") return str;
 
   const cryptoStr = hmac(str);
   if (cryptoStr.length >= RANDOM_STRING_LENGTH)
     return cryptoStr.slice(0, RANDOM_STRING_LENGTH);
 
-  return (
-    cryptoStr + faker.datatype.string(RANDOM_STRING_LENGTH - cryptoStr.length)
-  );
+  return fill(cryptoStr, RANDOM_STRING_LENGTH);
 }
 
 function hmac(str: string): string {
   return createHmac("sha256", SECRET).update(str).digest("hex");
+}
+
+function fill(str: string, length: number): string {
+  if (!str) return fill("_", length);
+  if (str.length >= length) return str.slice(0, length);
+  return fill(str + str, length);
 }
