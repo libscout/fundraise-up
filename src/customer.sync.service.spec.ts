@@ -58,6 +58,10 @@ describe("CustomerSyncService", () => {
       .toArray();
 
     expect(syncedCustomers).toHaveLength(15);
+
+    await syncCustomerService.destroy();
+
+    await delay(1500);
   });
 
   it("has to resume sync from the right place", async () => {
@@ -81,6 +85,27 @@ describe("CustomerSyncService", () => {
       .toArray();
 
     expect(syncedCustomers).toHaveLength(11);
+  });
+
+  it("has to sync updated customers", async () => {
+    syncCustomerService.watch();
+
+    await new Promise((res) => setTimeout(res, 500));
+
+    const [customer1] = await customerService.generateAndSaveRandomCustomers(1);
+
+    await customerCollection.updateOne(
+      { _id: customer1 },
+      { $set: { test_field: 123 } as Partial<Customer> },
+    );
+
+    await delay(1000);
+
+    const syncedCustomer1 = await anonymCustomerCollection.findOne({
+      _id: customer1,
+    });
+
+    expect(syncedCustomer1["test_field"]).toEqual(123);
   });
 });
 

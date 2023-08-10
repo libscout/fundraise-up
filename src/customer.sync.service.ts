@@ -60,7 +60,10 @@ export class CustomerSyncService {
     if (this.changeStream) return this.changeStream;
 
     const resumeAfter = await this.findResumeToken();
-    this.changeStream = this.source.watch(undefined, { resumeAfter });
+    this.changeStream = this.source.watch(undefined, {
+      resumeAfter,
+      fullDocument: "updateLookup",
+    });
     await this.saveResumeToken();
     return this.changeStream;
   }
